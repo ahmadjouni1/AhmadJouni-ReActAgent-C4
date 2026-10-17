@@ -34,6 +34,8 @@ cells = [
     md("""# ☀️ SunCedar Solar · Custom ReAct Agent with Configurable Personas
 **EECE 503P/798S · C4: Agent Personas & Thinking Mechanisms** · Ahmad Jouni
 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ahmadjouni1/AhmadJouni-ReActAgent-C4/blob/main/business_react_agent.ipynb)
+
 This notebook turns the C3 SunCedar Solar business chatbot into a **ReAct agent** that reasons and acts through tools.
 The ReAct loop is written by hand as a **LangGraph `StateGraph`** (no prebuilt agent or executor). The model writes
 `Thought / Action / Final Answer` as plain text; our code parses the Action, runs the tool, feeds back an

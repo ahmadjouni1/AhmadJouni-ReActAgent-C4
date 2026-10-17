@@ -12,6 +12,8 @@ short_description: ReAct agent with configurable personas (LangGraph + Gemini)
 
 # AhmadJouni-ReActAgent-C4
 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ahmadjouni1/AhmadJouni-ReActAgent-C4/blob/main/business_react_agent.ipynb)
+
 A custom **ReAct agent with configurable personas** for SunCedar Solar, a fictional Lebanese home-solar company.
 The ReAct loop (Thought → Action → Observation → … → Final Answer) is implemented by hand as a **LangGraph
 StateGraph** on **Gemini** (native `google-genai` SDK), with three personas, four tools, and a logged experiment grid
