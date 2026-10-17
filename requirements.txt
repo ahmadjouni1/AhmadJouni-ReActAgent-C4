@@ -1,0 +1,7 @@
+google-genai>=2.0
+langgraph>=1.0
+gradio==6.30.0
+pypdf>=5.0
+python-dotenv>=1.0
+pandas>=2.0
+matplotlib>=3.8

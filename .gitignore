@@ -1,0 +1,16 @@
+# Secrets
+.env
+
+# Logs written by the live app (experiment logs in experiments/ and cache/ ARE committed)
+/leads.jsonl
+/feedback.jsonl
+experiments_run.log
+
+# Python / Jupyter / Gradio
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.venv/
+venv/
+.gradio/
+flagged/
