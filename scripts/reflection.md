@@ -1,7 +1,8 @@
 <!-- DRAFT written from the actual experiment results: edit into your own words. -->
 ## 9 · Reflection
 
-*Based on 96 logged runs (16 variants × 6 queries) in `experiments/results.csv`. Each cell is a single sample on a
+*Based on 96 logged runs (16 variants × 6 queries) in `experiments/results.csv`, plus one live Gradio conversation per
+persona (marked "live app" below). Each experiment cell is a single sample on a
 6-query test set, so small differences (0.95 vs 0.99) are within noise; latency is not comparable across variants
 because the API returned 503/504 "overloaded" errors during the runs.*
 
@@ -23,6 +24,12 @@ tools.
 - **Salma (Cautious Helper, T=0.3)** was the most **helpful and reliable**: quality 1.00, perfect on every rule-based
   metric, helpfulness 5.0. The cost is length (83 words on average) and, like Karim, she answered the Arabizi question in
   English.
+
+**Live check in the Gradio app** (one conversation per persona, outside the experiment grid) showed the same
+characters. Nour quoted the Family price warmly and again answered the Arabizi question fully in Arabizi. Karim chained
+`recommend_package` → `search_docs` and replied with a bare spec list (Villa, 12 kW three-phase, 20.48 kWh, 10-year
+battery warranty), still asking for name and email. Salma checked the site-visit policy in the documents *before* asking
+for contact details, then read Lara's name, email and request back after saving the lead.
 
 For SunCedar's audience, Salma is the safest default and Nour the most pleasant. Nour's language handling matters for
 Lebanese users who write in Arabizi.
@@ -49,14 +56,20 @@ Well on the core paths. The `Thought` lines matched the actions taken. The agent
 household descriptions and `search_docs` before every price. For questions the documents don't cover, it chained
 `search_docs` → no match → `record_feedback`, and for leads it often checked the service area with `search_docs`
 before `record_customer_interest`. Malformed outputs were caught by the parser (7 re-prompts in 96 runs, 1 give-up).
-Two weaknesses:
-1. After finding nothing on EV chargers, several personas said *"we don't currently offer EV chargers"*. The
-   documents never say that, so it is a small invented fact that the judge did not penalize.
-2. **It does not always notice an incomplete Observation.** In the §6.1 trace, Karim searched once for the Villa's
-   inverter, battery and warranty. The passages covered the warranty but not the package table, and instead of
-   searching again he answered "Hybrid inverter / LiFePO4", missing the 12 kW three-phase inverter and the 20.48 kWh
-   battery.
-3. **The language rule was the least reliable behaviour:** the reply matched the user's Arabizi in only 56% of runs
+Weaknesses:
+1. After finding nothing on EV chargers, several personas said *"we don't currently offer EV chargers"*. Salma
+   said it again in the live app. The documents never say that, so it is a small invented fact that the judge did not
+   penalize.
+2. **A tool limitation hid facts, and the agent did not notice.** In the §6.1 trace, Karim asked for the Villa's
+   inverter, battery and warranty. The third passage *did* contain "12 kW three-phase" and "20.48 kWh", but in the part
+   that `search_docs` cuts off (each passage is truncated at 600 characters, while some package-table chunks are about
+   700). He received an incomplete Observation and did not search again, so he answered "Hybrid inverter / LiFePO4". When
+   the same facts came from `recommend_package` in the live app, his answer was complete. The fix is to return whole
+   chunks; it is not applied here, because changing the tool's output would invalidate the cached experiment runs.
+3. **Tool arguments can absorb earlier context.** In the live app, Salma logged the complaint as *"technician arrived
+   3 hours late for the **site visit**"*, but the user never said "site visit". It came from the previous turn about
+   booking one.
+4. **The language rule was the least reliable behaviour:** the reply matched the user's Arabizi in only 56% of runs
    (others answered in English or in Arabic script), even though the search queries were correctly translated to
    English keywords in 16 of 16 runs.
 
@@ -67,8 +80,13 @@ nothing, and replied *"I have logged your question"* **without calling `record_f
 rules in the system prompt, the question was logged in every run on `gemini-3.1-flash-lite`. Other effects were
 smaller than expected: prices stayed grounded and search queries stayed in English even without the rules, because the
 output format and the tool descriptions already push the agent to search. The persona/instruction boundary also showed
-a soft conflict. Rule 11 (reply in the user's language) lost to Karim's "technical vocabulary" and Salma's "plain
-words" traits on the Arabizi query, so a persona's style wording can override a rule.
+two soft conflicts, where a persona's style wording overrode the instructions:
+- Rule 11 (reply in the user's language) lost to Karim's "technical vocabulary" and Salma's "plain words" traits on the
+  Arabizi query.
+- The output format asks for a `Thought:` line before every step. In the experiments every persona wrote one, but in
+  the live app Karim ("terse… no small talk") skipped it in **all 3** of his outputs and went straight to `Action:` /
+  `Final Answer:`, while Salma skipped it only once in 9. The parser still accepted his steps, because a Thought is
+  optional for detecting an Action. However, the strict persona hides exactly the reasoning that ReAct is meant to show.
 
 ### What were the biggest challenges in implementation?
 1. **What the API really honors.** Presence and frequency penalties are rejected (HTTP 400) by every current Gemini
@@ -82,7 +100,8 @@ words" traits on the Arabizi query, so a persona's style wording can override a 
    runs. A disk cache (re-runs cost nothing), per-model throttling, retries and a resumable runner made the 96-run grid
    possible.
 4. **Retrieval quality.** Plain BM25 ranked the maintenance-plan section above the package table for "Basic package
-   price" until I added plural stemming and prefixed each chunk with its page heading.
+   price" until I added plural stemming and prefixed each chunk with its page heading. The PDF's tables also extract
+   one cell per line, so table chunks are long, and the 600-character passage limit cut rows off (weakness 2 above).
 5. **Evaluation.** The LLM judge was lenient (5/5 for a lead reply that never confirmed the email), and most variants hit
    the ceiling on a 6-query set. The rule-based checks (tool, format, price, facts) were more informative than the
    judge, and a larger test set with repeated samples would be the next step.
